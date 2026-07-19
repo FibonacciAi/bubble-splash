@@ -403,14 +403,14 @@ function doCrazyStuff(seed = 0) {
       for (let i = 0; i < 14; i++) spawnHeart(W * Math.random(), H * 0.5);
       break;
     case 8:
-      sfx.cheer();
+      sfx.bubbleParty();
       showCheer('BUBBLE PARTY!');
       for (let i = 0; i < 10; i++) {
         burst(Math.random() * W, Math.random() * H * 0.6, CRAZY_COLORS[i % CRAZY_COLORS.length], 14);
       }
       break;
     default:
-      sfx.pop();
+      sfx.bigPop();
       sfx.magic();
       showCheer(word);
       playWithCat(false);
@@ -418,6 +418,7 @@ function doCrazyStuff(seed = 0) {
   }
 
   if (score > 0 && score % 10 === 0) {
+    sfx.bigPop();
     sfx.fanfare();
     showCheer('SUPER SPLASH!!!');
   }
@@ -528,9 +529,16 @@ $('#btn-party')?.addEventListener('click', (e) => {
   e.stopPropagation();
   if (!playing) startGame();
   sfx.unlock();
+  sfx.bubbleParty();
   doCrazyStuff((Math.random() * 90) | 0);
-  setTimeout(() => doCrazyStuff(((Math.random() * 90) | 0) + 5), 80);
-  setTimeout(() => doCrazyStuff(((Math.random() * 90) | 0) + 11), 160);
+  setTimeout(() => {
+    sfx.bigPop();
+    doCrazyStuff(((Math.random() * 90) | 0) + 5);
+  }, 90);
+  setTimeout(() => {
+    sfx.bubbleParty();
+    doCrazyStuff(((Math.random() * 90) | 0) + 11);
+  }, 180);
 });
 
 function updateCat(dt) {
