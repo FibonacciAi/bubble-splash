@@ -27,8 +27,8 @@ function ac() {
 
     wet = actx.createBiquadFilter();
     wet.type = 'highshelf';
-    wet.frequency.value = 3200;
-    wet.gain.value = 3.5;
+    wet.frequency.value = 2800;
+    wet.gain.value = 1.5; // soft water clarity — not metallic sparkle
 
     master.connect(comp);
     comp.connect(wet);
