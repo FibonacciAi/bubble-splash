@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Bubble Splash!</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="c"></canvas>
+
+    <div id="hud" class="hidden">
+      <div class="stars" aria-live="polite">
+        <span class="star-ico">🫧</span>
+        <b id="score">0</b>
+      </div>
+      <p id="tip" class="tip">Mash <kbd>ANY KEY</kbd> for splashy fun! 🌊</p>
+    </div>
+
+    <div id="fun-bar" class="fun-bar hidden">
+      <button type="button" id="btn-pet" class="pet-btn" aria-label="Play with dolphin">🐬 SPLASH</button>
+      <button type="button" id="btn-party" class="party-btn" aria-label="Party">💥 BUBBLES</button>
+    </div>
+
+    <div id="title" class="screen">
+      <div class="title-card">
+        <p class="eyebrow">under the sea adventure</p>
+        <h1>Bubble Splash!</h1>
+        <p class="lede">Swim · Splash with the dolphin · Mash keys!</p>
+        <button type="button" id="btn-play" class="big-btn">DIVE IN 🌊</button>
+        <p class="help">
+          Trackpad moves you<br/>
+          <strong>Any key</strong> = crazy cool stuff
+        </p>
+      </div>
+    </div>
+
+    <div id="cheer" class="cheer hidden" aria-hidden="true"></div>
+  </div>
+  <script type="module" src="js/main.js?v=splash1"></script>
+</body>
+</html>

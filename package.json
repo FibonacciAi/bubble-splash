@@ -1,0 +1,10 @@
+{
+  "name": "bubble-splash",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Bubble Splash! — preschool ocean adventure for ages 3–4. Trackpad + mash any key. Dolphin friend, no fail states.",
+  "scripts": {
+    "start": "python3 -m http.server 8790"
+  }
+}
