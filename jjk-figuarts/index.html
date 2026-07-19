@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>JJK S.H.Figuarts Hunt</title>
+<style>
+:root{
+  --ink:#f7f4ed; --muted:#aaa6b2; --bg:#08080b; --panel:#111116;
+  --red:#ff334f; --blue:#38a7ff; --gold:#ffcf54; --violet:#9a70ff;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;color:var(--ink);background:
+  radial-gradient(circle at 16% 0%,#3a0715 0,transparent 30%),
+  radial-gradient(circle at 92% 12%,#061f3b 0,transparent 28%),
+  linear-gradient(#08080b,#0d0d12 55%,#08080b);
+  font:15px/1.45 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.19;z-index:10;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E")
+}
+.wrap{width:min(1180px,calc(100% - 28px));margin:auto}
+.hero{padding:34px 0 20px;position:relative;overflow:hidden}
+.kicker{font-weight:900;letter-spacing:.22em;color:var(--red);font-size:.76rem}
+h1{font-size:clamp(2.7rem,8vw,6.6rem);line-height:.85;margin:12px 0 18px;letter-spacing:-.065em}
+h1 span{display:block;color:transparent;-webkit-text-stroke:1.2px #fff8}
+.sub{max-width:720px;color:#ccc6d3;font-size:1.05rem}
+.hero-grid{display:grid;grid-template-columns:1.45fr .55fr;gap:16px;margin-top:26px}
+.alert,.countdown{
+  border:1px solid #ffffff18;background:#ffffff08;backdrop-filter:blur(18px);
+  border-radius:24px;padding:20px;box-shadow:0 24px 90px #0008
+}
+.alert strong{color:var(--gold)}
+.countdown{background:linear-gradient(135deg,#331019,#101018)}
+.countdown-label{color:#ffb1bd;font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem}
+#timer{font-size:clamp(1.5rem,4vw,2.4rem);font-weight:950;margin-top:8px}
+nav{display:flex;gap:8px;overflow:auto;padding:16px 0 8px;position:sticky;top:0;z-index:8;background:linear-gradient(#08080bf5,#08080bd8,transparent);backdrop-filter:blur(12px)}
+nav a{white-space:nowrap;text-decoration:none;color:#ddd;background:#17171d;border:1px solid #ffffff12;padding:9px 13px;border-radius:999px;font-weight:750}
+.section-title{display:flex;align-items:end;justify-content:space-between;margin:38px 0 14px}
+.section-title h2{font-size:clamp(1.7rem,4vw,3rem);margin:0;letter-spacing:-.04em}
+.section-title small{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.card{position:relative;overflow:hidden;border-radius:28px;border:1px solid #ffffff15;background:linear-gradient(145deg,#17171d,#0d0d11);box-shadow:0 24px 70px #0007}
+.card:after{content:"";position:absolute;inset:auto -20% -45% 25%;height:60%;background:radial-gradient(circle,var(--glow),transparent 68%);filter:blur(10px);opacity:.35;pointer-events:none}
+.art{height:270px;position:relative;display:grid;place-items:center;overflow:hidden;background:
+linear-gradient(135deg,#ffffff09,#0000),radial-gradient(circle at 50% 50%,var(--glow),transparent 56%)}
+.art .kanji{font-size:9rem;font-weight:1000;color:#ffffff0e;transform:rotate(-8deg);letter-spacing:-.15em}
+.figure-name{position:absolute;left:20px;bottom:17px;font-size:clamp(2.2rem,5vw,4.3rem);font-weight:1000;line-height:.82;letter-spacing:-.07em;text-transform:uppercase}
+.figure-name em{display:block;font-size:.43em;color:var(--accent);font-style:normal;letter-spacing:.02em;margin-top:10px}
+.badge{position:absolute;top:16px;left:16px;background:#08080bd9;border:1px solid #ffffff22;padding:8px 11px;border-radius:999px;font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.09em}
+.wish{position:absolute;right:16px;top:16px;border:1px solid #ffffff24;background:#08080bd9;color:white;border-radius:999px;width:42px;height:42px;font-size:1.1rem}
+.wish.active{background:var(--red);border-color:var(--red)}
+.body{padding:20px;position:relative;z-index:2}
+.price-row{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.price{font-size:2rem;font-weight:1000}
+.jp{color:var(--muted)}
+.verdict{margin:13px 0;padding:12px 14px;border-left:3px solid var(--accent);background:#ffffff08;border-radius:0 12px 12px 0}
+.specs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.spec{padding:10px;background:#ffffff08;border-radius:12px}
+.spec b{display:block;font-size:.72rem;color:var(--muted);text-transform:uppercase}
+ul{padding-left:20px;margin:12px 0}
+.links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.btn{display:flex;justify-content:space-between;align-items:center;text-decoration:none;color:white;padding:12px;border:1px solid #ffffff18;border-radius:13px;background:#ffffff09;font-weight:850}
+.btn.primary{background:var(--accent);color:#08080b;border-color:transparent}
+.review-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.review-card{border-radius:19px;padding:17px;background:#141419;border:1px solid #ffffff12}
+.stars{color:var(--gold);letter-spacing:.08em}
+.mahito{margin:18px 0 60px;padding:28px;border-radius:30px;position:relative;overflow:hidden;background:
+radial-gradient(circle at 80% 20%,#655cff66,transparent 35%),linear-gradient(135deg,#151221,#0c0c10);border:1px solid #8c7cff55}
+.mahito h2{font-size:clamp(2.7rem,8vw,6rem);line-height:.9;letter-spacing:-.06em;margin:8px 0 14px}
+.mahito .status{display:inline-block;background:var(--gold);color:#17110a;font-weight:950;padding:8px 11px;border-radius:999px}
+.fact{max-width:760px;font-size:1.05rem}
+footer{padding:25px 0 50px;color:#8f8b98;font-size:.85rem}
+@media(max-width:760px){
+ .hero-grid,.grid,.review-grid{grid-template-columns:1fr}
+ .art{height:240px}.links{grid-template-columns:1fr}.specs{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+<header class="hero">
+ <div class="wrap">
+  <div class="kicker">CURSED FIGURE INTELLIGENCE // S.H.FIGUARTS TRACKER</div>
+  <h1>THE 120% <span>FIGURE HUNT</span></h1>
+  <p class="sub">Current preorders, actual prices, collector verdicts, and the honest Mahito situation — no fake release date nonsense.</p>
+  <div class="hero-grid">
+   <div class="alert"><strong>Best simple US play:</strong> BBTS currently lists Yuji at <b>$74.99</b> and Todo at <b>$84.99</b>, both estimated for December 2026 US arrival. Japan’s official release month is November 2026.</div>
+   <div class="countdown"><div class="countdown-label">Next JJK lineup reveal</div><div id="timer">Loading curse energy…</div><small>July 20, 2026 · 7:00 PM ET</small></div>
+  </div>
+ </div>
+</header>
+
+<main class="wrap">
+<nav>
+ <a href="#figures">Figures</a><a href="#reviews">Reviews</a><a href="#mahito">Mahito Watch</a><a href="#sources">Official Sources</a>
+</nav>
+
+<section id="figures">
+ <div class="section-title"><h2>Main Event</h2><small>Tap ♥ to save your picks</small></div>
+ <div class="grid">
+  <article class="card" style="--accent:#ff3d55;--glow:#d51f37">
+   <div class="art"><div class="kanji">黒閃</div><div class="badge">New sculpt · Nov 2026 JP</div><button class="wish" aria-label="wishlist">♥</button><div class="figure-name">Yuji<em>120% of Potential</em></div></div>
+   <div class="body">
+    <div class="price-row"><div class="price">$74.99</div><div class="jp">BBTS · ¥8,250 official JP MSRP</div></div>
+    <div class="verdict"><b>Verdict:</b> The must-buy. Brand-new battle-damaged Shibuya look plus actual Black Flash effects.</div>
+    <div class="specs"><div class="spec"><b>Height</b>5.9 in</div><div class="spec"><b>Faces</b>3</div><div class="spec"><b>Hands</b>7</div></div>
+    <ul><li>New fierce-battle head sculpt</li><li>Flowing interchangeable hair</li><li>Redesigned damaged outfit details</li><li>Black Flash effect set included</li></ul>
+    <div class="links">
+     <a class="btn primary" target="_blank" href="https://www.bigbadtoystore.com/product/jujutsu-kaisen-shfiguarts-yuji-itadori-120-potential-action-figure-190174">BBTS · $74.99 <span>↗</span></a>
+     <a class="btn" target="_blank" href="https://tohoanimationstore.us/products/jujutsu-kaisen-yuji-itadori-120-of-potential-tamashii-nations-s-h-figuarts-figure">Toho Store US <span>↗</span></a>
+     <a class="btn" target="_blank" href="https://tamashiiweb.com/item/15844/?wovn=en">Official Tamashii <span>↗</span></a>
+     <a class="btn" target="_blank" href="https://www.youtube.com/results?search_query=SH+Figuarts+Yuji+120%25+Potential+review">Video previews <span>↗</span></a>
+    </div>
+   </div>
+  </article>
+
+  <article class="card" style="--accent:#38a7ff;--glow:#236bd8">
+   <div class="art"><div class="kanji">拍手</div><div class="badge">Reissue · Nov 2026 JP</div><button class="wish" aria-label="wishlist">♥</button><div class="figure-name">Aoi Todo<em>Boogie Woogie Beast</em></div></div>
+   <div class="body">
+    <div class="price-row"><div class="price">$84.99</div><div class="jp">BBTS · ¥9,350 official JP MSRP</div></div>
+    <div class="verdict"><b>Collector verdict:</b> Big shelf presence, wild face selection, excellent posing — and the folded arms are pure Todo.</div>
+    <div class="specs"><div class="spec"><b>Height</b>6.3 in</div><div class="spec"><b>Faces</b>4</div><div class="spec"><b>Hands</b>8</div></div>
+    <ul><li>Extreme waist and kicking articulation</li><li>Boogie Woogie clapping hands</li><li>Folded-arm replacement parts</li><li>Designed to pair with Yuji</li></ul>
+    <div class="links">
+     <a class="btn primary" target="_blank" href="https://www.bigbadtoystore.com/product/jujutsu-kaisen-shfiguarts-aoi-todo-action-figure-123510">BBTS · $84.99 <span>↗</span></a>
+     <a class="btn" target="_blank" href="https://www.toyco.store/products/pre-order-jujutsu-kaisen-s-h-figuarts-aoi-todo-action-figure">Toyco · $84.99 <span>↗</span></a>
+     <a class="btn" target="_blank" href="https://tamashiiweb.com/item/15885/?wovn=en">Official Tamashii <span>↗</span></a>
+     <a class="btn" target="_blank" href="https://www.youtube.com/results?search_query=SH+Figuarts+Aoi+Todo+review">Hands-on reviews <span>↗</span></a>
+    </div>
+   </div>
+  </article>
+ </div>
+</section>
+
+<section id="reviews">
+ <div class="section-title"><h2>Review Intelligence</h2><small>No pretending previews are reviews</small></div>
+ <div class="review-grid">
+  <div class="review-card"><div class="stars">★★★★★</div><h3>Yuji: sculpt</h3><p>The official photos show a much more intense Shibuya likeness than the original release. The hair and damaged uniform sell the 120% moment.</p></div>
+  <div class="review-card"><div class="stars">★★★★☆</div><h3>Yuji: value</h3><p>$74.99 is strong for a new sculpt with Black Flash effects. The unknown is final production QC because it has not shipped yet.</p></div>
+  <div class="review-card"><div class="stars">★★★★½</div><h3>Todo: proven figure</h3><p>The 2023 release already established the mold: expressive, muscular, and extremely fun to pose. This is the safer known quantity.</p></div>
+ </div>
+</section>
+
+<section id="mahito" class="mahito">
+ <span class="status">NOT OFFICIALLY CONFIRMED</span>
+ <h2>SO… WHEN MAHITO?</h2>
+ <p class="fact"><b>Right now:</b> Tamashii has announced a new Jujutsu Kaisen S.H.Figuarts lineup reveal for <b>July 21 at 8:00 AM Japan time</b> — that is <b>July 20 at 7:00 PM Eastern</b>. Fans strongly suspect Mahito, but Bandai has not officially named him yet. So the honest answer is: <b>possible reveal in two days, no confirmed preorder or release month yet.</b></p>
+ <div class="links" style="max-width:650px">
+  <a class="btn primary" target="_blank" href="https://tamashiiweb.com/item_character/jujutsukaisen/?wovn=en">Watch official JJK page <span>↗</span></a>
+  <a class="btn" target="_blank" href="https://www.youtube.com/@BandaiNamcoToysCollectiblesAmerica">Tamashii video channel <span>↗</span></a>
+ </div>
+</section>
+
+<section id="sources">
+ <div class="section-title"><h2>Bottom Line</h2></div>
+ <div class="alert"><b>Buy order:</b> Yuji first. Todo second. Together they create the strongest display and both are general retail releases, not exclusives. Avoid inflated eBay preorders while BBTS is sitting at $74.99 / $84.99.</div>
+</section>
+</main>
+
+<footer class="wrap">Prices and availability checked July 18, 2026. Retailer arrival dates are estimates. Wishlist saves locally on this device.</footer>
+<script>
+const target = new Date("2026-07-20T19:00:00-04:00").getTime();
+const timer = document.getElementById("timer");
+function tick(){
+ const d=target-Date.now();
+ if(d<=0){timer.textContent="REVEAL TIME";return}
+ const days=Math.floor(d/86400000), hrs=Math.floor(d%86400000/3600000), mins=Math.floor(d%3600000/60000);
+ timer.textContent=`${days}D ${hrs}H ${mins}M`;
+}
+tick();setInterval(tick,30000);
+document.querySelectorAll(".wish").forEach((b,i)=>{
+ const key="jjk-wish-"+i;b.classList.toggle("active",localStorage.getItem(key)==="1");
+ b.onclick=()=>{const on=!b.classList.contains("active");b.classList.toggle("active",on);localStorage.setItem(key,on?"1":"0")}
+});
+</script>
+</body>
+</html>
