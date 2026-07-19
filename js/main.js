@@ -1,6 +1,6 @@
 /**
  * Bubble Splash! — preschool ocean play (trackpad + any key).
- * Dolphin play is the star: big hit targets, always call/splash, no fail.
+ * Dolphin buddy, rising treasures, mash-key chaos. No fail states.
  */
 import { sfx, startMusic } from './audio.js';
 
@@ -12,17 +12,20 @@ const ASSETS = {
   bg: 'assets/bg/meadow.jpg',
   girl: 'assets/chars/sam.png',
   cat: 'assets/chars/bob.png',
-  coin: 'assets/items/coin.png',
-  clover: 'assets/items/clover.png',
-  star: 'assets/items/star.png',
-  heart: 'assets/items/heart.png',
-  crystal: 'assets/items/crystal.png',
+  duck: 'assets/items/coin.png',
+  shell: 'assets/items/clover.png',
+  starfish: 'assets/items/star.png',
+  fish: 'assets/items/fish.png',
+  pearl: 'assets/items/pearl.png',
+  treasure: 'assets/items/treasure.png',
+  seahorse: 'assets/items/seahorse.png',
+  bubble: 'assets/items/bubble.png',
 };
 
 const imgs = {};
-const ITEM_KEYS = ['coin', 'clover', 'star', 'heart', 'crystal'];
-const CHEERS = ['Yay!', 'Splash!', 'Wow!', 'Bubbles!', 'Amazing!', 'Hooray!', 'Swim!'];
-const CAT_LOVE = ['Splash!', 'Eee-eee!', 'Love!', 'Swim!', 'Bubble hug!', 'Best friend!', 'Dolphin!'];
+const ITEM_KEYS = ['duck', 'shell', 'starfish', 'fish', 'pearl', 'treasure', 'seahorse', 'bubble'];
+const CHEERS = ['Yay!', 'Splash!', 'Wow!', 'Bubbles!', 'Amazing!', 'Hooray!', 'Swim!', 'Treasure!', 'So cool!'];
+const CAT_LOVE = ['Splash!', 'Eee-eee!', 'Love!', 'Swim!', 'Bubble hug!', 'Best friend!', 'Dolphin!', 'Whee!'];
 
 let W = 800;
 let H = 600;
@@ -34,7 +37,7 @@ let time = 0;
 let last = 0;
 
 const mouse = { x: 400, y: 300 };
-const player = { x: 400, y: 400, scale: 1, bounce: 0, facing: 1 };
+const player = { x: 400, y: 400, scale: 1, bounce: 0, facing: 1, trail: 0 };
 
 const cat = {
   x: 200,
@@ -48,18 +51,20 @@ const cat = {
   spin: 0,
   scale: 1,
   heartT: 0,
-  pulse: 0, // visual “come splash me” pulse
+  pulse: 0,
 };
 
 const items = [];
 const particles = [];
 const floats = [];
 const hearts = [];
-const fireworks = []; // screen rings / flashes
+const fireworks = [];
+const ambient = []; // rising background bubbles
 let flashColor = null;
 let flashT = 0;
 let shakeT = 0;
 let lastKeyFx = 0;
+let causticT = 0;
 
 function loadImage(src) {
   return new Promise((resolve) => {
@@ -98,8 +103,8 @@ function clamp(v, a, b) {
 }
 
 function catDims() {
-  const h = Math.min(190, H * 0.28) * cat.scale;
-  return { w: h * 0.95, h };
+  const h = Math.min(220, H * 0.32) * cat.scale;
+  return { w: h * 1.05, h };
 }
 
 function catCenter() {
@@ -115,10 +120,10 @@ function distPlayerCat() {
 function hitCat(sx, sy) {
   const { w, h } = catDims();
   const c = catCenter();
-  const pad = 50;
+  const pad = 55;
   return (
-    sx > c.x - w * 0.6 - pad &&
-    sx < c.x + w * 0.6 + pad &&
+    sx > c.x - w * 0.55 - pad &&
+    sx < c.x + w * 0.55 + pad &&
     sy > c.y - h * 0.55 - pad &&
     sy < c.y + h * 0.55 + pad
   );
@@ -128,29 +133,32 @@ function spawnItem(x) {
   items.push({
     kind: ITEM_KEYS[(Math.random() * ITEM_KEYS.length) | 0],
     x: x ?? 60 + Math.random() * (W - 120),
-    y: -50 - Math.random() * 60,
-    r: 40 + Math.random() * 16,
-    vy: 35 + Math.random() * 45,
-    spin: (Math.random() - 0.5) * 1.2,
+    y: -50 - Math.random() * 80,
+    r: 48 + Math.random() * 18,
+    vy: 28 + Math.random() * 40,
+    spin: (Math.random() - 0.5) * 0.9,
     ang: Math.random() * 6,
     bob: Math.random() * 6,
     taken: false,
+    glow: 0.5 + Math.random() * 0.5,
   });
 }
 
 function burst(x, y, color, n = 14) {
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2;
-    const s = 70 + Math.random() * 160;
+    const s = 80 + Math.random() * 200;
     particles.push({
-      x, y,
+      x,
+      y,
       vx: Math.cos(a) * s,
-      vy: Math.sin(a) * s - 50,
-      r: 5 + Math.random() * 8,
-      life: 0.55 + Math.random() * 0.4,
+      vy: Math.sin(a) * s - 60,
+      r: 4 + Math.random() * 10,
+      life: 0.55 + Math.random() * 0.45,
       max: 1,
       color,
-      g: 260,
+      g: 180,
+      bubble: Math.random() < 0.45,
     });
   }
 }
@@ -159,15 +167,16 @@ function spawnHeart(x, y) {
   hearts.push({
     x: x + (Math.random() - 0.5) * 40,
     y: y - 10,
-    vy: -50 - Math.random() * 40,
-    life: 1.2,
-    size: 22 + Math.random() * 16,
+    vy: -55 - Math.random() * 40,
+    life: 1.3,
+    size: 20 + Math.random() * 18,
     phase: Math.random() * 6,
+    emoji: Math.random() < 0.5 ? '🫧' : '💙',
   });
 }
 
 function floatText(x, y, text) {
-  floats.push({ x, y, text, life: 1.2, vy: -55 });
+  floats.push({ x, y, text, life: 1.25, vy: -60 });
 }
 
 function showCheer(text) {
@@ -195,13 +204,16 @@ function collect(item) {
   item.taken = true;
   bumpScore(1);
   sfx.collect();
-  const colors = ['#ff6eb4', '#ffe566', '#7ed957', '#5ec8ff', '#c9a0ff', '#ffb347'];
-  burst(item.x, item.y, colors[(Math.random() * colors.length) | 0], 16);
-  floatText(item.x, item.y - 20, '+1 ⭐');
+  const colors = ['#5ec8ff', '#7dffff', '#80ffd0', '#ffe566', '#ffb347', '#a0e8ff', '#80a0ff'];
+  burst(item.x, item.y, colors[(Math.random() * colors.length) | 0], 22);
+  floatText(item.x, item.y - 20, '+1 🫧');
+  player.bounce = Math.max(player.bounce, 0.55);
   if (score >= nextCheer) {
     nextCheer += 5;
     showCheer(CHEERS[(Math.random() * CHEERS.length) | 0]);
     sfx.cheer();
+    flashColor = '#7dffff';
+    flashT = 0.15;
   }
 }
 
@@ -209,14 +221,13 @@ function collect(item) {
 function playWithCat(force = false) {
   const d = distPlayerCat();
 
-  // Far away: call dolphin to come (this is the “didn't work” fix — always a response)
   if (!force && d > 160) {
     cat.mode = 'follow';
     cat.modeT = 5;
     cat.love = Math.min(1, cat.love + 0.15);
     sfx.meow();
     floatText(cat.x, cat.y - 80, 'Coming!');
-    burst(cat.x, cat.y, '#5ec8ff', 12);
+    burst(cat.x, cat.y, '#5ec8ff', 16);
     setTip('Dolphin is swimming over! 🐬 Stay still… then splash!');
     showCheer('Here, dolphin!');
     return;
@@ -224,14 +235,13 @@ function playWithCat(force = false) {
 
   pets += 1;
   cat.love = 1;
-  cat.scale = 1.25;
+  cat.scale = 1.3;
   cat.mode = 'snuggle';
   cat.modeT = 3;
   cat.pulse = 1;
 
-  // Snap friend next to player so splash always lands
-  cat.x = player.x + (player.facing > 0 ? -55 : 55);
-  cat.y = H * 0.58;
+  cat.x = player.x + (player.facing > 0 ? -70 : 70);
+  cat.y = H * 0.56;
   cat.facing = player.facing > 0 ? 1 : -1;
 
   try {
@@ -239,13 +249,13 @@ function playWithCat(force = false) {
     sfx.meow();
   } catch (_) {}
 
-  for (let i = 0; i < 8; i++) spawnHeart(cat.x, cat.y - 40);
-  burst(cat.x, cat.y - 20, '#5ec8ff', 28);
-  burst(player.x, player.y - 40, '#7dffff', 12);
+  for (let i = 0; i < 10; i++) spawnHeart(cat.x, cat.y - 40);
+  burst(cat.x, cat.y - 20, '#5ec8ff', 32);
+  burst(player.x, player.y - 40, '#7dffff', 16);
   floatText(cat.x, cat.y - 90, CAT_LOVE[(Math.random() * CAT_LOVE.length) | 0]);
 
   player.bounce = 1;
-  player.scale = 1.15;
+  player.scale = 1.18;
 
   bumpScore(1);
   floatText(player.x, player.y - 100, '+1 🫧');
@@ -255,26 +265,25 @@ function playWithCat(force = false) {
     sfx.cheer();
   }
 
-  setTip('💕 Bubbly hug! Press <kbd>ANY KEY</kbd> again · Or chase!');
+  setTip('💙 Bubbly hug! Press <kbd>ANY KEY</kbd> again · Or chase!');
   spawnItem(cat.x);
 }
 
 function doPlayChase() {
   cat.mode = 'play';
-  cat.modeT = 3;
+  cat.modeT = 3.2;
   cat.spin = Math.PI * 6;
-  cat.vx = (Math.random() < 0.5 ? -1 : 1) * (140 + Math.random() * 80);
-  cat.scale = 1.15;
+  cat.vx = (Math.random() < 0.5 ? -1 : 1) * (160 + Math.random() * 90);
+  cat.scale = 1.2;
   sfx.play();
   sfx.meow();
-  burst(cat.x, cat.y, '#7dffff', 20);
+  burst(cat.x, cat.y, '#7dffff', 24);
   floatText(cat.x, cat.y - 80, 'Catch me!');
   showCheer('Swim!');
   setTip('Swim after the dolphin with the trackpad! 🐬💨');
 }
 
 function doMagic() {
-  // Space / click: if on cat or close → pet; else call cat OR chase if already close
   if (hitCat(mouse.x, mouse.y)) {
     playWithCat(true);
     return;
@@ -288,13 +297,13 @@ function doMagic() {
   playWithCat(false);
   sfx.magic();
   player.bounce = 0.7;
-  burst(player.x, player.y - 40, '#c9a0ff', 14);
+  burst(player.x, player.y - 40, '#5ec8ff', 16);
 }
 
 const CRAZY_WORDS = [
   'SPLASH!', 'Whee!', 'Zoom!', 'Pop!', 'Wow!', 'Yay!', 'Bubbles!',
   'Whoosh!', 'Wave!', 'Magic!', 'Giggle!', 'Super!', 'Party!',
-  'Swim!', 'Zing!', 'Blast!', 'Whoa!', 'Yippee!',
+  'Swim!', 'Zing!', 'Blast!', 'Whoa!', 'Yippee!', 'Treasure!',
 ];
 const CRAZY_COLORS = [
   '#5ec8ff', '#7dffff', '#80ffd0', '#80a0ff', '#00d4ff',
@@ -304,7 +313,6 @@ const CRAZY_COLORS = [
 /** Any key / button mash → guaranteed cool chaos for a 3yo */
 function doCrazyStuff(seed = 0) {
   const now = performance.now();
-  // tiny debounce so hold-to-repeat still feels good but not freezes
   if (now - lastKeyFx < 40) return;
   lastKeyFx = now;
 
@@ -313,7 +321,6 @@ function doCrazyStuff(seed = 0) {
   const color = CRAZY_COLORS[seed % CRAZY_COLORS.length];
   const word = CRAZY_WORDS[seed % CRAZY_WORDS.length];
 
-  // Always: sound + particles + score tick
   sfx.crazy(seed);
   bumpScore(1);
   floatText(
@@ -322,50 +329,44 @@ function doCrazyStuff(seed = 0) {
     word
   );
 
-  // Screen flash + little shake
   flashColor = color;
-  flashT = 0.2;
-  shakeT = 0.18;
+  flashT = 0.22;
+  shakeT = 0.2;
 
   player.bounce = 1;
-  player.scale = 1.25;
+  player.scale = 1.28;
 
-  // Ring fireworks
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     fireworks.push({
       x: Math.random() * W,
       y: Math.random() * H * 0.7,
       r: 10,
-      maxR: 80 + Math.random() * 100,
-      life: 0.6,
+      maxR: 90 + Math.random() * 120,
+      life: 0.65,
       color: CRAZY_COLORS[(seed + i) % CRAZY_COLORS.length],
     });
   }
 
-  // Big confetti burst at player + random spots
-  burst(player.x, player.y - 40, color, 30);
-  burst(Math.random() * W, Math.random() * H * 0.5, CRAZY_COLORS[(seed + 3) % CRAZY_COLORS.length], 20);
-  burst(Math.random() * W, Math.random() * H * 0.5, CRAZY_COLORS[(seed + 5) % CRAZY_COLORS.length], 16);
+  burst(player.x, player.y - 40, color, 36);
+  burst(Math.random() * W, Math.random() * H * 0.5, CRAZY_COLORS[(seed + 3) % CRAZY_COLORS.length], 24);
+  burst(Math.random() * W, Math.random() * H * 0.5, CRAZY_COLORS[(seed + 5) % CRAZY_COLORS.length], 20);
 
-  // Hearts rain
-  for (let i = 0; i < 6; i++) {
-    spawnHeart(Math.random() * W, H * 0.3 + Math.random() * H * 0.4);
+  for (let i = 0; i < 8; i++) {
+    spawnHeart(Math.random() * W, H * 0.25 + Math.random() * H * 0.45);
   }
 
-  // Rain of lucky items
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     spawnItem(40 + Math.random() * (W - 80));
   }
 
-  // Pull nearby goodies
+  // Strong magnet — treasures rush to kid
   for (const it of items) {
     if (it.taken) continue;
-    it.vy = Math.min(it.vy, 20);
-    it.x += (player.x - it.x) * 0.2;
-    it.y += (player.y - 40 - it.y) * 0.15;
+    it.vy = Math.min(it.vy, 12);
+    it.x += (player.x - it.x) * 0.28;
+    it.y += (player.y - 50 - it.y) * 0.22;
   }
 
-  // Cat always reacts somehow
   switch (pick) {
     case 0:
     case 1:
@@ -378,21 +379,20 @@ function doCrazyStuff(seed = 0) {
     case 4:
       cat.mode = 'follow';
       cat.modeT = 4;
-      cat.scale = 1.3;
+      cat.scale = 1.35;
       sfx.meow();
       floatText(cat.x, cat.y - 70, 'Eee-eee!');
       break;
     case 5:
-      // Super spin cat
-      cat.spin = Math.PI * 10;
+      cat.spin = Math.PI * 12;
       cat.mode = 'play';
-      cat.modeT = 2;
+      cat.modeT = 2.2;
       sfx.boing();
       showCheer('Spinny fish!');
       break;
     case 6:
       sfx.whoosh();
-      player.x = clamp(player.x + (Math.random() < 0.5 ? -120 : 120), 60, W - 60);
+      player.x = clamp(player.x + (Math.random() < 0.5 ? -140 : 140), 60, W - 60);
       mouse.x = player.x;
       showCheer('Zoom!');
       break;
@@ -400,13 +400,13 @@ function doCrazyStuff(seed = 0) {
       sfx.fanfare();
       showCheer(word);
       cat.love = 1;
-      for (let i = 0; i < 12; i++) spawnHeart(W * Math.random(), H * 0.5);
+      for (let i = 0; i < 14; i++) spawnHeart(W * Math.random(), H * 0.5);
       break;
     case 8:
       sfx.cheer();
       showCheer('BUBBLE PARTY!');
-      for (let i = 0; i < 8; i++) {
-        burst(Math.random() * W, Math.random() * H * 0.6, CRAZY_COLORS[i % CRAZY_COLORS.length], 10);
+      for (let i = 0; i < 10; i++) {
+        burst(Math.random() * W, Math.random() * H * 0.6, CRAZY_COLORS[i % CRAZY_COLORS.length], 14);
       }
       break;
     default:
@@ -422,7 +422,7 @@ function doCrazyStuff(seed = 0) {
     showCheer('SUPER SPLASH!!!');
   }
 
-  setTip('Mash <kbd>ANY KEY</kbd> · Blue buttons · Trackpad swims you! 🌊');
+  setTip('Mash <kbd>ANY KEY</kbd> · Big blue buttons · Trackpad swims! 🌊');
 }
 
 function startGame() {
@@ -438,18 +438,20 @@ function startGame() {
   particles.length = 0;
   floats.length = 0;
   hearts.length = 0;
+  ambient.length = 0;
   player.x = W / 2;
-  player.y = H * 0.62;
+  player.y = H * 0.6;
   mouse.x = player.x;
   mouse.y = player.y;
-  cat.x = W * 0.3;
-  cat.y = H * 0.58;
-  cat.vx = 55;
-  cat.mode = 'follow'; // start by coming to her!
+  cat.x = W * 0.28;
+  cat.y = H * 0.56;
+  cat.vx = 70;
+  cat.mode = 'follow';
   cat.modeT = 4;
-  cat.love = 0.4;
+  cat.love = 0.5;
   cat.scale = 1;
-  for (let i = 0; i < 8; i++) spawnItem();
+  for (let i = 0; i < 10; i++) spawnItem();
+  for (let i = 0; i < 18; i++) spawnAmbient(true);
   sfx.unlock();
   sfx.start();
   sfx.meow();
@@ -457,6 +459,18 @@ function startGame() {
   showCheer('Mash any key!');
   setTip('Press <kbd>ANY KEY</kbd> for splashy chaos · Blue buttons too! 🌊');
   $('#btn-party')?.classList.remove('hidden');
+}
+
+function spawnAmbient(anywhere = false) {
+  ambient.push({
+    x: Math.random() * W,
+    y: anywhere ? Math.random() * H : H + 20 + Math.random() * 40,
+    r: 3 + Math.random() * 14,
+    vy: -(20 + Math.random() * 45),
+    vx: (Math.random() - 0.5) * 18,
+    life: 4 + Math.random() * 5,
+    phase: Math.random() * 6,
+  });
 }
 
 // ── Input ──
@@ -477,7 +491,6 @@ window.addEventListener('pointerdown', (e) => {
 });
 
 window.addEventListener('keydown', (e) => {
-  // Skip lone modifiers
   if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') return;
   e.preventDefault();
   sfx.unlock();
@@ -517,6 +530,7 @@ $('#btn-party')?.addEventListener('click', (e) => {
   sfx.unlock();
   doCrazyStuff((Math.random() * 90) | 0);
   setTimeout(() => doCrazyStuff(((Math.random() * 90) | 0) + 5), 80);
+  setTimeout(() => doCrazyStuff(((Math.random() * 90) | 0) + 11), 160);
 });
 
 function updateCat(dt) {
@@ -526,17 +540,17 @@ function updateCat(dt) {
   cat.pulse = Math.max(0, cat.pulse - dt);
   if (cat.spin > 0) cat.spin = Math.max(0, cat.spin - dt * 10);
 
-  const baseY = H * 0.58;
+  const baseY = H * 0.56;
   const d = distPlayerCat();
 
   if (cat.mode === 'snuggle') {
-    cat.x += (player.x + (player.facing > 0 ? -50 : 50) - cat.x) * Math.min(1, dt * 6);
-    cat.y = baseY + Math.sin(time * 6) * 6;
-    cat.bounce = Math.abs(Math.sin(time * 9)) * 12;
+    cat.x += (player.x + (player.facing > 0 ? -65 : 65) - cat.x) * Math.min(1, dt * 6);
+    cat.y = baseY + Math.sin(time * 5) * 10;
+    cat.bounce = Math.abs(Math.sin(time * 8)) * 14;
     cat.facing = player.x >= cat.x ? 1 : -1;
     cat.heartT -= dt;
     if (cat.heartT <= 0) {
-      cat.heartT = 0.35;
+      cat.heartT = 0.3;
       spawnHeart(cat.x, cat.y - 50);
     }
     if (cat.modeT <= 0) {
@@ -544,16 +558,15 @@ function updateCat(dt) {
       cat.modeT = 3;
     }
   } else if (cat.mode === 'follow') {
-    const tx = player.x + (player.facing > 0 ? -70 : 70);
+    const tx = player.x + (player.facing > 0 ? -85 : 85);
     const dx = tx - cat.x;
-    cat.x += Math.sign(dx || 1) * Math.min(Math.abs(dx), 160 * dt);
+    cat.x += Math.sign(dx || 1) * Math.min(Math.abs(dx), 190 * dt);
     cat.facing = dx >= 0 ? 1 : -1;
-    cat.y = baseY + Math.sin(time * 3) * 10;
-    cat.bounce = Math.sin(time * 8) * 10;
-    if (d < 90) {
-      // auto-snuggle when close enough — key for 3yo
+    cat.y = baseY + Math.sin(time * 3.2) * 14;
+    cat.bounce = Math.sin(time * 7) * 12;
+    if (d < 100) {
       cat.mode = 'snuggle';
-      cat.modeT = 2;
+      cat.modeT = 2.2;
       if (Math.random() < 0.4) sfx.purr();
       spawnHeart(cat.x, cat.y - 40);
     }
@@ -565,29 +578,25 @@ function updateCat(dt) {
     cat.x += cat.vx * dt;
     if (cat.x < 80 || cat.x > W - 80) cat.vx *= -1;
     cat.facing = cat.vx >= 0 ? 1 : -1;
-    cat.y = baseY + Math.sin(time * 11) * 20;
-    cat.bounce = Math.abs(Math.sin(time * 14)) * 18;
-    if (d < 85) {
-      // caught the cat!
-      playWithCat(true);
-    }
+    cat.y = baseY + Math.sin(time * 11) * 24;
+    cat.bounce = Math.abs(Math.sin(time * 14)) * 20;
+    if (d < 90) playWithCat(true);
     if (cat.modeT <= 0) {
       cat.mode = 'follow';
       cat.modeT = 3;
     }
   } else {
-    // wander
     cat.x += cat.vx * dt;
     if (cat.x < 80 || cat.x > W - 80) cat.vx *= -1;
     cat.facing = cat.vx >= 0 ? 1 : -1;
-    cat.y = baseY + Math.sin(time * 2) * 12;
-    cat.bounce = Math.sin(time * 4) * 6;
-    if (d < 180) {
+    cat.y = baseY + Math.sin(time * 2.2) * 16;
+    cat.bounce = Math.sin(time * 4) * 8;
+    if (d < 200) {
       cat.mode = 'follow';
       cat.modeT = 4;
     }
     if (cat.modeT <= 0) {
-      cat.vx = (Math.random() < 0.5 ? -1 : 1) * (45 + Math.random() * 40);
+      cat.vx = (Math.random() < 0.5 ? -1 : 1) * (50 + Math.random() * 45);
       cat.modeT = 2 + Math.random() * 3;
     }
   }
@@ -595,6 +604,7 @@ function updateCat(dt) {
 
 function update(dt) {
   time += dt;
+  causticT += dt;
   if (flashT > 0) flashT -= dt;
   if (shakeT > 0) shakeT -= dt;
 
@@ -605,24 +615,53 @@ function update(dt) {
     if (f.life <= 0) fireworks.splice(i, 1);
   }
 
-  const ease = Math.min(1, dt * 7);
+  const ease = Math.min(1, dt * 8);
   const tx = clamp(mouse.x, 50, W - 50);
   const ty = clamp(mouse.y, 80, H - 40);
   const ox = player.x;
+  const oy = player.y;
   player.x += (tx - player.x) * ease;
   player.y += (ty - player.y) * ease;
   if (player.x > ox + 0.4) player.facing = 1;
   if (player.x < ox - 0.4) player.facing = -1;
+  const sped = Math.hypot(player.x - ox, player.y - oy);
+  player.trail = Math.min(1, player.trail * 0.9 + sped * 0.04);
   player.bounce = Math.max(0, player.bounce - dt * 3);
-  player.scale += ((1 + player.bounce * 0.12) - player.scale) * Math.min(1, dt * 8);
+  player.scale += ((1 + player.bounce * 0.14) - player.scale) * Math.min(1, dt * 8);
+
+  // swim bubble trail
+  if (player.trail > 0.15 && Math.random() < player.trail * 0.5) {
+    particles.push({
+      x: player.x + (Math.random() - 0.5) * 30,
+      y: player.y + 10,
+      vx: (Math.random() - 0.5) * 20,
+      vy: 30 + Math.random() * 20,
+      r: 3 + Math.random() * 6,
+      life: 0.5,
+      max: 0.5,
+      color: 'rgba(200,240,255,0.7)',
+      g: -40,
+      bubble: true,
+    });
+  }
 
   updateCat(dt);
+
+  // ambient bubbles
+  if (ambient.length < 22 && Math.random() < 0.08) spawnAmbient(false);
+  for (let i = ambient.length - 1; i >= 0; i--) {
+    const b = ambient[i];
+    b.life -= dt;
+    b.y += b.vy * dt;
+    b.x += b.vx * dt + Math.sin(time * 2 + b.phase) * 12 * dt;
+    if (b.life <= 0 || b.y < -30) ambient.splice(i, 1);
+  }
 
   for (let i = hearts.length - 1; i >= 0; i--) {
     const h = hearts[i];
     h.life -= dt;
     h.y += h.vy * dt;
-    h.x += Math.sin(time * 5 + h.phase) * 25 * dt;
+    h.x += Math.sin(time * 5 + h.phase) * 28 * dt;
     if (h.life <= 0) hearts.splice(i, 1);
   }
 
@@ -630,32 +669,42 @@ function update(dt) {
     if (it.taken) continue;
     it.y += it.vy * dt;
     it.ang += it.spin * dt;
-    it.bob += dt * 3;
-    it.x += Math.sin(it.bob) * 10 * dt;
+    it.bob += dt * 2.6;
+    it.x += Math.sin(it.bob) * 14 * dt;
+    // gentle float (less gravity feel)
+    it.vy += Math.sin(it.bob * 0.7) * 8 * dt;
+    it.vy = clamp(it.vy, 12, 70);
     if (it.y > H + 50) {
       it.y = -40;
       it.x = 60 + Math.random() * (W - 120);
     }
-    if (Math.hypot(player.x - it.x, player.y - 50 - it.y) < it.r + 52) collect(it);
+    // big collect radius for little hands
+    if (Math.hypot(player.x - it.x, player.y - 40 - it.y) < it.r + 64) collect(it);
   }
   for (let i = items.length - 1; i >= 0; i--) {
     if (items[i].taken) items.splice(i, 1);
   }
-  while (items.length < 10) spawnItem();
+  while (items.length < 12) spawnItem();
 
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.life -= dt;
-    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
     p.vy += p.g * dt;
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-    p.vx *= 0.98;
+    p.vx *= 0.985;
   }
   for (let i = floats.length - 1; i >= 0; i--) {
     const f = floats[i];
     f.life -= dt;
-    if (f.life <= 0) { floats.splice(i, 1); continue; }
+    if (f.life <= 0) {
+      floats.splice(i, 1);
+      continue;
+    }
     f.y += f.vy * dt;
   }
 }
@@ -667,7 +716,7 @@ function drawImg(img, x, y, w, h, flip = false, rot = 0) {
   if (flip) ctx.scale(-1, 1);
   if (img) ctx.drawImage(img, -w / 2, -h / 2, w, h);
   else {
-    ctx.fillStyle = '#ffb6d9';
+    ctx.fillStyle = '#7dffff';
     ctx.beginPath();
     ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -679,84 +728,121 @@ function draw() {
   ctx.save();
   if (shakeT > 0) {
     ctx.translate(
-      (Math.random() - 0.5) * 14 * shakeT * 5,
-      (Math.random() - 0.5) * 14 * shakeT * 5
+      (Math.random() - 0.5) * 16 * shakeT * 5,
+      (Math.random() - 0.5) * 16 * shakeT * 5
     );
   }
 
   if (imgs.bg) {
-    const s = Math.max(W / imgs.bg.width, H / imgs.bg.height) * 1.06;
+    const s = Math.max(W / imgs.bg.width, H / imgs.bg.height) * 1.05;
     const bw = imgs.bg.width * s;
     const bh = imgs.bg.height * s;
-    ctx.drawImage(imgs.bg, (W - bw) / 2, (H - bh) / 2, bw, bh);
+    // gentle parallax drift
+    const px = Math.sin(time * 0.15) * 12;
+    const py = Math.cos(time * 0.12) * 8;
+    ctx.drawImage(imgs.bg, (W - bw) / 2 + px, (H - bh) / 2 + py, bw, bh);
   } else {
-    ctx.fillStyle = '#c8f0ff';
+    ctx.fillStyle = '#1a8fd4';
     ctx.fillRect(0, 0, W, H);
   }
 
-  // items
+  // soft light caustics
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  for (let i = 0; i < 5; i++) {
+    const cx = W * (0.15 + i * 0.18) + Math.sin(causticT * 0.7 + i) * 40;
+    const cy = H * 0.2 + Math.cos(causticT * 0.5 + i * 1.3) * 30;
+    const grd = ctx.createRadialGradient(cx, cy, 10, cx, cy, 120 + i * 20);
+    grd.addColorStop(0, 'rgba(255,255,200,0.9)');
+    grd.addColorStop(1, 'rgba(255,255,200,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 140 + i * 15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // ambient bubbles (behind characters)
+  for (const b of ambient) {
+    ctx.globalAlpha = Math.min(0.55, b.life * 0.25);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = Math.min(0.25, b.life * 0.12);
+    ctx.fillStyle = '#dff8ff';
+    ctx.beginPath();
+    ctx.arc(b.x - b.r * 0.25, b.y - b.r * 0.25, b.r * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // treasures
   for (const it of items) {
     if (it.taken) continue;
-    const bob = Math.sin(it.bob) * 6;
+    const bob = Math.sin(it.bob) * 8;
+    const pulse = 0.55 + Math.sin(time * 3 + it.bob) * 0.2;
     ctx.save();
     ctx.translate(it.x, it.y + bob);
-    ctx.rotate(it.ang * 0.25);
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = '#fff8a0';
+    ctx.rotate(it.ang * 0.2);
+    // soft aqua glow
+    ctx.globalAlpha = 0.35 * pulse * it.glow;
+    ctx.fillStyle = '#7dffff';
     ctx.beginPath();
-    ctx.arc(0, 0, it.r, 0, Math.PI * 2);
+    ctx.arc(0, 0, it.r * 1.15, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
-    drawImg(imgs[it.kind], 0, 0, it.r * 2, it.r * 2);
+    drawImg(imgs[it.kind], 0, 0, it.r * 2.05, it.r * 2.05);
     ctx.restore();
   }
 
-  // CAT — big and obvious
-  const catH = Math.min(190, H * 0.28) * cat.scale;
-  const catW = catH * 0.95;
+  // DOLPHIN
+  const catH = Math.min(220, H * 0.32) * cat.scale;
+  const catW = catH * 1.05;
   const cy = cat.y + cat.bounce;
 
-  // pulse ring so kids see the cat is interactive
-  const pulse = 0.35 + Math.sin(time * 3) * 0.15 + cat.pulse * 0.4;
+  const pulse = 0.3 + Math.sin(time * 2.8) * 0.12 + cat.pulse * 0.45;
   ctx.globalAlpha = pulse;
-  ctx.strokeStyle = '#ff6eb4';
-  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#5ec8ff';
+  ctx.lineWidth = 7;
   ctx.beginPath();
-  ctx.ellipse(cat.x, cy + 10, catW * 0.65, catH * 0.5, 0, 0, Math.PI * 2);
+  ctx.ellipse(cat.x, cy + 8, catW * 0.62, catH * 0.48, 0, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.globalAlpha = 0.25 + cat.love * 0.35;
-  ctx.fillStyle = '#ff9ed0';
+  ctx.globalAlpha = 0.18 + cat.love * 0.28;
+  ctx.fillStyle = '#7dffff';
   ctx.beginPath();
-  ctx.ellipse(cat.x, cy + 10, catW * 0.7, catH * 0.55, 0, 0, Math.PI * 2);
+  ctx.ellipse(cat.x, cy + 8, catW * 0.68, catH * 0.52, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalAlpha = 1;
 
-  ctx.fillStyle = 'rgba(80,40,100,0.12)';
+  // soft shadow
+  ctx.fillStyle = 'rgba(10, 40, 80, 0.18)';
   ctx.beginPath();
-  ctx.ellipse(cat.x, cat.y + catH * 0.4, catW * 0.4, 14, 0, 0, Math.PI * 2);
+  ctx.ellipse(cat.x, cat.y + catH * 0.42, catW * 0.38, 12, 0, 0, Math.PI * 2);
   ctx.fill();
 
   drawImg(imgs.cat, cat.x, cy, catW, catH, cat.facing < 0, cat.spin > 0 ? cat.spin : 0);
 
-  // speech bubble always visible on cat
+  // dolphin speech — ocean themed
   if (playing) {
     const bubble =
-      cat.mode === 'snuggle' ? 'Splash 💕' :
+      cat.mode === 'snuggle' ? 'Splash! 💙' :
       cat.mode === 'play' ? 'Catch me!' :
-      cat.mode === 'follow' ? 'Hi!' :
-      'Splash me! 💕';
+      cat.mode === 'follow' ? 'Hi friend!' :
+      'Splash me! 🫧';
     ctx.font = '900 22px Nunito, sans-serif';
     ctx.textAlign = 'center';
     const tw = ctx.measureText(bubble).width;
     const bx = cat.x;
     const by = cy - catH * 0.52;
-    ctx.fillStyle = 'rgba(255,253,248,0.96)';
-    ctx.strokeStyle = '#ff8ec8';
+    ctx.fillStyle = 'rgba(240, 251, 255, 0.96)';
+    ctx.strokeStyle = '#3ec0ff';
     ctx.lineWidth = 4;
     roundRect(ctx, bx - tw / 2 - 14, by - 24, tw + 28, 40, 16);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = '#d04090';
+    ctx.fillStyle = '#0a6ea8';
     ctx.fillText(bubble, bx, by + 5);
   }
 
@@ -764,70 +850,93 @@ function draw() {
     ctx.globalAlpha = Math.max(0, h.life);
     ctx.font = `${h.size}px serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('💕', h.x, h.y);
+    ctx.fillText(h.emoji || '🫧', h.x, h.y);
   }
   ctx.globalAlpha = 1;
 
-  // player
-  ctx.fillStyle = 'rgba(80,40,100,0.15)';
+  // player (bigger)
+  ctx.fillStyle = 'rgba(10, 40, 80, 0.2)';
   ctx.beginPath();
-  ctx.ellipse(player.x, player.y + 10, 48 * player.scale, 14, 0, 0, Math.PI * 2);
+  ctx.ellipse(player.x, player.y + 14, 52 * player.scale, 15, 0, 0, Math.PI * 2);
   ctx.fill();
-  const ph = Math.min(200, H * 0.32) * player.scale;
-  const pw = ph * 0.9;
-  const py = player.y - ph * 0.35 + Math.sin(time * 6) * 4 - player.bounce * 18;
+  const ph = Math.min(240, H * 0.38) * player.scale;
+  const pw = ph * 0.78;
+  const py = player.y - ph * 0.32 + Math.sin(time * 5.5) * 6 - player.bounce * 20;
+  // soft aqua halo so kid pops off busy reef
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = '#dff8ff';
+  ctx.beginPath();
+  ctx.ellipse(player.x, py + 10, pw * 0.55, ph * 0.48, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
   drawImg(imgs.girl, player.x, py, pw, ph, player.facing < 0);
 
+  // particles on top
   for (const p of particles) {
-    ctx.globalAlpha = Math.max(0, p.life / p.max);
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.globalAlpha = Math.max(0, p.life / (p.max || 1));
+    if (p.bubble) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(220,245,255,0.35)';
+      ctx.beginPath();
+      ctx.arc(p.x - p.r * 0.2, p.y - p.r * 0.2, p.r * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   ctx.globalAlpha = 1;
 
   ctx.textAlign = 'center';
-  ctx.font = '900 28px Nunito, sans-serif';
+  ctx.font = '900 30px Nunito, sans-serif';
   for (const f of floats) {
     ctx.globalAlpha = Math.max(0, f.life);
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
     ctx.strokeStyle = '#fff';
     ctx.strokeText(f.text, f.x, f.y);
-    ctx.fillStyle = '#ff8a00';
+    ctx.fillStyle = '#00a0e0';
     ctx.fillText(f.text, f.x, f.y);
   }
   ctx.globalAlpha = 1;
 
-  // fireworks rings
   for (const f of fireworks) {
     ctx.globalAlpha = Math.max(0, f.life * 1.4);
     ctx.strokeStyle = f.color;
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 10;
     ctx.beginPath();
     ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = Math.max(0, f.life * 0.5);
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r * 0.6, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
 
   if (playing) {
     const on = hitCat(mouse.x, mouse.y);
-    ctx.strokeStyle = on ? '#ff6eb4' : 'rgba(255,255,255,0.9)';
+    ctx.strokeStyle = on ? '#5ec8ff' : 'rgba(255,255,255,0.95)';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(mouse.x, mouse.y, on ? 26 : 16, 0, Math.PI * 2);
+    ctx.arc(mouse.x, mouse.y, on ? 28 : 16, 0, Math.PI * 2);
     ctx.stroke();
     if (on) {
-      ctx.font = '22px serif';
-      ctx.fillText('🐾', mouse.x, mouse.y + 7);
+      ctx.font = '24px serif';
+      ctx.fillText('🐬', mouse.x, mouse.y + 8);
     }
   }
 
   ctx.restore();
 
-  // full-screen color flash (after restore so it covers everything)
   if (flashT > 0 && flashColor) {
-    ctx.globalAlpha = Math.min(0.45, flashT * 2.2);
+    ctx.globalAlpha = Math.min(0.4, flashT * 2);
     ctx.fillStyle = flashColor;
     ctx.fillRect(0, 0, W, H);
     ctx.globalAlpha = 1;
@@ -848,19 +957,27 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
   last = now;
   if (playing) update(dt);
-  else time += dt;
-  draw();
-  if (!playing) {
-    ctx.fillStyle = 'rgba(255,240,250,0.12)';
-    ctx.fillRect(0, 0, W, H);
+  else {
+    time += dt;
+    // idle ambient on title
+    if (ambient.length < 14 && Math.random() < 0.05) spawnAmbient(true);
+    for (let i = ambient.length - 1; i >= 0; i--) {
+      const b = ambient[i];
+      b.life -= dt;
+      b.y += b.vy * dt;
+      b.x += b.vx * dt + Math.sin(time * 2 + b.phase) * 12 * dt;
+      if (b.life <= 0 || b.y < -30) ambient.splice(i, 1);
+    }
   }
+  draw();
   requestAnimationFrame(frame);
 }
 
 (async function boot() {
   resize();
   await loadAll();
-  for (let i = 0; i < 6; i++) spawnItem();
+  for (let i = 0; i < 8; i++) spawnItem();
+  for (let i = 0; i < 16; i++) spawnAmbient(true);
   cat.x = W * 0.32;
   cat.y = H * 0.55;
   last = performance.now();
