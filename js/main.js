@@ -24,7 +24,7 @@ const ASSETS = {
 
 const imgs = {};
 const ITEM_KEYS = ['duck', 'shell', 'starfish', 'fish', 'pearl', 'treasure', 'seahorse', 'bubble'];
-const CHEERS = ['Yay!', 'Splash!', 'Wow!', 'Bubbles!', 'Amazing!', 'Hooray!', 'Swim!', 'Treasure!', 'So cool!'];
+const CHEERS = ['Yay!', 'Splash!', 'Wow!', 'Bubbles!', 'Amazing!', 'Hooray!', 'Swim!', 'So cool!', 'Whee!'];
 const CAT_LOVE = ['Splash!', 'Eee-eee!', 'Love!', 'Swim!', 'Bubble hug!', 'Best friend!', 'Dolphin!', 'Whee!'];
 
 let W = 800;
@@ -303,7 +303,7 @@ function doMagic() {
 const CRAZY_WORDS = [
   'SPLASH!', 'Whee!', 'Zoom!', 'Pop!', 'Wow!', 'Yay!', 'Bubbles!',
   'Whoosh!', 'Wave!', 'Magic!', 'Giggle!', 'Super!', 'Party!',
-  'Swim!', 'Zing!', 'Blast!', 'Whoa!', 'Yippee!', 'Treasure!',
+  'Swim!', 'Zing!', 'Blast!', 'Whoa!', 'Yippee!', 'Glub!',
 ];
 const CRAZY_COLORS = [
   '#5ec8ff', '#7dffff', '#80ffd0', '#80a0ff', '#00d4ff',

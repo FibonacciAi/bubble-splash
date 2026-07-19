@@ -251,19 +251,19 @@ function bubblePop(size = 0.8, when = 0) {
     f0: 5000 + s * 2000,
   });
 
-  // --- G: tiny high sparkle ping ---
+  // --- G: soft air “plink” (water drop, not coin) ---
   const ping = a.createOscillator();
   const pingG = a.createGain();
   ping.type = 'sine';
-  ping.frequency.setValueAtTime(1800 + s * 1400 + Math.random() * 200, t0 + 0.015);
-  ping.frequency.exponentialRampToValueAtTime(2400 + s * 800, t0 + 0.09);
-  pingG.gain.setValueAtTime(0.0001, t0 + 0.015);
-  pingG.gain.exponentialRampToValueAtTime(0.05 + s * 0.03, t0 + 0.022);
-  pingG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.11);
+  ping.frequency.setValueAtTime(620 + s * 280 + Math.random() * 80, t0 + 0.012);
+  ping.frequency.exponentialRampToValueAtTime(180 + s * 60, t0 + 0.1);
+  pingG.gain.setValueAtTime(0.0001, t0 + 0.012);
+  pingG.gain.exponentialRampToValueAtTime(0.035 + s * 0.02, t0 + 0.02);
+  pingG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
   ping.connect(pingG);
   pingG.connect(bus());
-  ping.start(t0 + 0.015);
-  ping.stop(t0 + 0.14);
+  ping.start(t0 + 0.012);
+  ping.stop(t0 + 0.15);
 }
 
 /** Soft underwater gurgle bed accent */
@@ -321,12 +321,24 @@ function dolphinPeep() {
   o2.stop(t0 + 0.35);
 }
 
-/** Sparkly pentatonic chime run */
-function chimeRun(freqs, gap = 0.055, gain = 0.07, when = 0) {
-  freqs.forEach((f, i) => {
-    tone(f, 0.22, 'sine', gain, when + i * gap);
-    tone(f * 2, 0.14, 'triangle', gain * 0.35, when + i * gap + 0.01);
+/** Soft wave wash — no melody, just water moving */
+function waveWash(when = 0, gain = 0.08) {
+  noiseShaped({ dur: 0.32, gain, when, kind: 'whoosh' });
+  noiseShaped({
+    dur: 0.28,
+    gain: gain * 0.6,
+    when: when + 0.04,
+    kind: 'gurgle',
+    f0: 260 + Math.random() * 100,
+    f1: 70,
   });
+}
+
+/** Cluster of wet pops (celebration without jackpot chimes) */
+function splashCluster(when = 0) {
+  const sizes = [0.9, 0.45, 0.7, 0.55, 1.0];
+  sizes.forEach((s, i) => bubblePop(s * (0.9 + Math.random() * 0.15), when + i * 0.05));
+  gurgle(when + 0.12, 0.055);
 }
 
 export const sfx = {
@@ -343,37 +355,36 @@ export const sfx = {
   },
 
   bubbleParty() {
-    // cascading size variety = feels like a bubble bath explosion
+    // pure bubble bath — pops + gurgle only
     const sizes = [1.2, 0.55, 0.95, 0.4, 1.05, 0.65, 0.85, 0.5];
     sizes.forEach((s, i) => bubblePop(s, i * 0.055));
-    chimeRun([523, 659, 784, 1047], 0.05, 0.05, 0.08);
-    gurgle(0.15, 0.06);
+    gurgle(0.1, 0.07);
+    gurgle(0.22, 0.05);
+    waveWash(0.08, 0.07);
   },
 
   collect() {
-    const s = 0.48 + Math.random() * 0.3;
-    bubblePop(s);
-    // coin-sparkle tail
-    const base = 880 + Math.random() * 200;
-    tone(base, 0.1, 'sine', 0.07, 0.03);
-    tone(base * 1.5, 0.14, 'triangle', 0.05, 0.07);
-    tone(base * 2, 0.12, 'sine', 0.035, 0.11);
+    // grab = wet pop only (no coin jingle)
+    bubblePop(0.5 + Math.random() * 0.28);
+    if (Math.random() < 0.35) gurgle(0.04, 0.03);
   },
 
   magic() {
-    bubblePop(0.75);
-    chimeRun([523, 659, 784, 1047], 0.048, 0.065, 0.03);
+    bubblePop(0.8);
+    bubblePop(0.5, 0.07);
+    waveWash(0.02, 0.06);
   },
 
   cheer() {
-    bubblePop(1.0);
-    chimeRun([523, 659, 784, 1047, 1319], 0.06, 0.075, 0.04);
-    gurgle(0.12, 0.05);
+    splashCluster(0);
+    waveWash(0.08, 0.06);
   },
 
   start() {
-    bubblePop(0.9);
-    chimeRun([392, 523, 659, 784], 0.07, 0.07, 0.04);
+    bubblePop(0.95);
+    bubblePop(0.5, 0.08);
+    waveWash(0.05, 0.07);
+    dolphinPeep();
   },
 
   meow() {
@@ -408,47 +419,47 @@ export const sfx = {
   },
 
   crazy(n = 0) {
-    // every mash = meaty unique pop; variety from seed
+    // every mash = wet pop variety only — no jingles
     const size = 0.55 + (n % 9) * 0.08 + Math.random() * 0.08;
     bubblePop(size);
     if (n % 2 === 0) bubblePop(0.35 + (n % 5) * 0.06, 0.06);
-    if (n % 4 === 0) {
-      // occasional sparkle + gurgle for “special” keys
-      tone(900 + (n % 6) * 80, 0.12, 'sine', 0.05, 0.04);
-      if (n % 8 === 0) gurgle(0.05, 0.05);
-    }
+    if (n % 5 === 0) gurgle(0.04, 0.045);
+    if (n % 7 === 0) waveWash(0.02, 0.055);
   },
 
   boing() {
+    // rubbery water bounce — deep body only
     if (muted) return;
     const a = ac();
     const t0 = a.currentTime;
     const o = a.createOscillator();
     const g = a.createGain();
     o.type = 'sine';
-    o.frequency.setValueAtTime(180, t0);
-    o.frequency.exponentialRampToValueAtTime(620, t0 + 0.08);
-    o.frequency.exponentialRampToValueAtTime(280, t0 + 0.22);
+    o.frequency.setValueAtTime(140, t0);
+    o.frequency.exponentialRampToValueAtTime(380, t0 + 0.07);
+    o.frequency.exponentialRampToValueAtTime(120, t0 + 0.22);
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(0.16, t0 + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.28);
+    g.gain.exponentialRampToValueAtTime(0.14, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26);
     o.connect(g);
     g.connect(bus());
     o.start(t0);
-    o.stop(t0 + 0.32);
-    bubblePop(0.7, 0.05);
+    o.stop(t0 + 0.3);
+    bubblePop(0.75, 0.04);
   },
 
   whoosh() {
     noiseShaped({ dur: 0.28, gain: 0.12, kind: 'whoosh' });
-    tone(900, 0.25, 'sine', 0.05, 0, 100);
+    tone(420, 0.22, 'sine', 0.04, 0, 80);
     bubblePop(0.65, 0.2);
   },
 
   fanfare() {
-    bubblePop(1.15);
-    chimeRun([392, 523, 659, 784, 1047, 1319], 0.055, 0.08, 0.03);
-    gurgle(0.2, 0.06);
+    // big splash moment — still all water, zero casino
+    bubblePop(1.2);
+    splashCluster(0.05);
+    waveWash(0.1, 0.08);
+    gurgle(0.18, 0.06);
   },
 };
 
