@@ -13,14 +13,44 @@ html,body{height:100%;margin:0;background:#050506;color:#fff;font-family:system-
 <script>
 (async()=>{
   try{
-    const files=Array.from({length:9},(_,i)=>`parts/part-${String(i).padStart(2,'0')}.txt`);
+    const files=[
+      'parts/part-00.txt',
+      'parts/part-01.txt',
+      'parts/part-02.txt',
+      'parts/rules-0.txt',
+      'parts/rules-1.txt',
+      'parts/rules-2-0.txt',
+      'parts/rules-2-1.txt',
+      'parts/rules-2-2.txt',
+      'parts/rules-2-3.txt',
+      'parts/rules-3.txt',
+      'parts/fix-03b.txt',
+      'parts/part-04.txt',
+      'parts/part-05.txt',
+      'parts/render-0.txt',
+      'parts/render-1.txt',
+      'parts/render-2.txt',
+      'parts/render-3.txt',
+      'parts/render-4.txt',
+      'parts/render-5.txt',
+      'parts/render-6.txt',
+      'parts/part-07.txt',
+      'parts/part-08.txt'
+    ];
     const parts=[];
     for(const file of files){
       const response=await fetch(file,{cache:'no-store'});
       if(!response.ok) throw new Error(`${file}: HTTP ${response.status}`);
       parts.push((await response.text()).trim());
     }
-    const binary=atob(parts.join(''));
+    const payload=parts.join('');
+    if(payload.length!==77812) throw new Error(`payload length ${payload.length}; expected 77812`);
+    if(globalThis.crypto?.subtle){
+      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload));
+      const hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+      if(hash!=='46ff6c6166714e08d75ea6bc0e48ee70313f33d43c7b4fad7eb781ad91026e78') throw new Error('integrity check failed');
+    }
+    const binary=atob(payload);
     const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
     const html=new TextDecoder('utf-8').decode(bytes);
     document.open();
