@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Loading GME 5D Chess…</title>
+<meta name="theme-color" content="#050506">
+<style>
+html,body{height:100%;margin:0;background:#050506;color:#fff;font-family:system-ui,-apple-system,sans-serif}main{height:100%;display:grid;place-items:center;text-align:center;padding:24px}b{color:#ff4761;letter-spacing:.14em}.bar{width:min(280px,75vw);height:5px;border-radius:99px;background:#222;overflow:hidden;margin:18px auto}.bar:after{content:"";display:block;width:40%;height:100%;background:#e21836;animation:m 1s infinite ease-in-out}@keyframes m{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}#error{display:none;color:#ffd7de;max-width:520px;line-height:1.5}
+</style>
+</head>
+<body><main><div id="loading"><b>GME 5D CHESS</b><div class="bar"></div><div>Opening the multiverse…</div></div><div id="error"></div></main>
+<script>
+(async()=>{
+  try{
+    const files=Array.from({length:9},(_,i)=>`parts/part-${String(i).padStart(2,'0')}.txt`);
+    const parts=[];
+    for(const file of files){
+      const response=await fetch(file,{cache:'no-store'});
+      if(!response.ok) throw new Error(`${file}: HTTP ${response.status}`);
+      parts.push((await response.text()).trim());
+    }
+    const binary=atob(parts.join(''));
+    const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
+    const html=new TextDecoder('utf-8').decode(bytes);
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(err){
+    document.getElementById('loading').style.display='none';
+    const error=document.getElementById('error');
+    error.style.display='block';
+    error.textContent=`Could not load the game: ${err.message}`;
+    console.error(err);
+  }
+})();
+</script></body></html>
